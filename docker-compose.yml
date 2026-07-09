@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   product-catalog-db:
     image: mysql:8.0
@@ -14,7 +12,10 @@ services:
       - "3310:3306"
     volumes:
       - product_catalog_db:/var/lib/mysql
+    networks:
+      - eshop-microservice-network
     healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "appuser", "-papppassword"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,7 +25,10 @@ services:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
 
-
 volumes:
   product_catalog_db:
     driver: local
+
+networks:
+  eshop-microservice-network:
+    driver: bridge

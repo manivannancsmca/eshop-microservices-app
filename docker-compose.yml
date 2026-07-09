@@ -15,7 +15,7 @@ services:
     networks:
       - eshop-microservice-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "appuser", "-papppassword"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "appuser", "-p", "apppassword"]
       interval: 10s
       timeout: 5s
       retries: 5

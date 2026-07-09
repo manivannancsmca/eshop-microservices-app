@@ -27,7 +27,7 @@ public class OpenApiConfig {
                                 .name("MIT")
                                 .url("https://opensource.org/licenses/MIT")))
                 .servers(List.of(
-                        new Server().url("http://localhost:8101").description("Local development")
+                        new Server().url("http://localhost:8011").description("Local development")
                         //new Server().url("http://localhost:8090").description("Docker")
                     ));
     }

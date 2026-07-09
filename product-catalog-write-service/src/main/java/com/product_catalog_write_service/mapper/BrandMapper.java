@@ -1,6 +1,7 @@
 package com.product_catalog_write_service.mapper;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
 
 import com.product_catalog_write_service.dto.request.CreateBrandRequest;
 import com.product_catalog_write_service.dto.request.UpdateBrandRequest;
@@ -14,6 +15,6 @@ public interface BrandMapper {
 
     BrandResponse toResponse(Brand brand);
 
-    void update(UpdateBrandRequest request, Brand brand);
+    void update(UpdateBrandRequest request, @MappingTarget Brand brand);
 
 }

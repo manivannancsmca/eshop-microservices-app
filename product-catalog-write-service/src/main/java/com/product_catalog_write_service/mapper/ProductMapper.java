@@ -1,6 +1,7 @@
 package com.product_catalog_write_service.mapper;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
 
 import com.product_catalog_write_service.dto.request.CreateProductRequest;
 import com.product_catalog_write_service.dto.request.UpdateProductRequest;
@@ -14,6 +15,6 @@ public interface ProductMapper {
 
     ProductResponse toResponse(Product product);
 
-    void update(UpdateProductRequest request, Product product);
+    void update(UpdateProductRequest request, @MappingTarget Product product);
 
 }

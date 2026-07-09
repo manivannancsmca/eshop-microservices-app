@@ -5,7 +5,7 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: product_catalog_db
+      MYSQL_DATABASE: product_catalog
       MYSQL_USER: appuser
       MYSQL_PASSWORD: apppassword
     ports:

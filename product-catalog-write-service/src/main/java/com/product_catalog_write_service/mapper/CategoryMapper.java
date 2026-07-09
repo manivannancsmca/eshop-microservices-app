@@ -1,6 +1,7 @@
 package com.product_catalog_write_service.mapper;
 
 import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
 
 import com.product_catalog_write_service.dto.request.CreateCategoryRequest;
 import com.product_catalog_write_service.dto.request.UpdateCategoryRequest;
@@ -14,6 +15,6 @@ public interface CategoryMapper {
 
     CategoryResponse toResponse(Category category);
 
-    void update(UpdateCategoryRequest request, Category category);
+    void update(UpdateCategoryRequest request, @MappingTarget Category category);
 
 }

@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  product-catalog-db:
+    image: mysql:8.0
+    container_name: product-catalog-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: product_catalog_db
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: apppassword
+    ports:
+      - "3310:3306"
+    volumes:
+      - product_catalog_db:/var/lib/mysql
+    healthcheck:
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    command: 
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+
+
+volumes:
+  product_catalog_db:
+    driver: local

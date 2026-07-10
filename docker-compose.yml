@@ -127,10 +127,27 @@ services:
     networks:
       - eshop-microservice-network
 
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.1
+    container_name: elasticsearch
+    restart: unless-stopped
+    ports:
+      - "9200:9200"
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false # Disabled for easy local development
+      - xpack.security.enrollment.enabled=false
+      - ES_JAVA_OPTS=-Xms1g -Xmx1g
+    volumes:
+      - es_data:/usr/share/elasticsearch/data
+    networks:
+      - eshop-microservice-network
+
 volumes:
   product_catalog_data:
   kafka_production_data:
   debezium_connect_data:
+  es_data:
 
 networks:
   eshop-microservice-network:

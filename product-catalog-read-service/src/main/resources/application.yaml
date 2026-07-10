@@ -1,0 +1,52 @@
+server:
+  port:  8012
+
+spring:
+  application:
+    name: product-catalog-read-service
+  kafka:
+    consumer:
+      auto-offset-reset: earliest
+      group-id: product-read-service-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
+    bootstrap-servers: localhost:9092
+    properties:
+      specific:
+        avro:
+          reader: 'true'
+      schema:
+        registry:
+          url: http://localhost:8081
+
+  elasticsearch:
+    uris: http://localhost:9200
+    username: elastic
+    password: ${ELASTIC_PASSWORD}
+    connection-timeout: 5s
+    socket-timeout: 60s
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when-authorized
+
+logging:
+  level:
+    '[com.productcatalog]': INFO
+    '[org.springframework.web]': INFO
+    '[org.hibernate.SQL]': WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

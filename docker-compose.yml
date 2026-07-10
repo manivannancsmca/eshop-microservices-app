@@ -7,7 +7,7 @@ services:
     container_name: product-catalog-db
     restart: unless-stopped
     ports:
-      - "3311:3306"
+      - "3311:3306" # Your app on localhost will connect to port 3311
     environment:
       - MYSQL_ROOT_PASSWORD=prod_root_secure_pass_99
       - MYSQL_USER=appuser
@@ -15,8 +15,8 @@ services:
       - MYSQL_DATABASE=product_catalog
     volumes:
       - product_catalog_data:/var/lib/mysql
-      - ./mysql_config:/etc/mysql/conf.d
-    command: --default-authentication-plugin=mysql_native_password
+      - ./infrastructure/mysql_config:/etc/mysql/conf.d # Keeps your custom configuration organized
+    command: --default-authentication-plugin=mysql_native_password --binlog-format=ROW --binlog-row-image=FULL
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pprod_root_secure_pass_99"]
       interval: 10s
@@ -43,16 +43,16 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT'
       KAFKA_INTER_BROKER_LISTENER_NAME: 'PLAINTEXT'
       CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
-      
-      # Production Optimizations for 1 Billion Records
-      KAFKA_NUM_PARTITIONS: 16 # Allows scaling downstream consumers
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1  # Set to 3 if deploying a multi-node cluster
+      KAFKA_NUM_PARTITIONS: 16
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
-      KAFKA_LOG_RETENTION_HOURS: 72 # 3 days retention to manage disk space tightly
-      KAFKA_LOG_SEGMENT_BYTES: 1073741824 # 1GB per segment file
+      KAFKA_LOG_RETENTION_HOURS: 72
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
     volumes:
       - kafka_production_data:/var/lib/kafka/data
+    networks:
+      - eshop-microservice-network
 
   # 3. Confluent Schema Registry
   schema-registry:
@@ -68,6 +68,8 @@ services:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+    networks:
+      - eshop-microservice-network
 
   # 4. Debezium Distributed Connect Cluster
   debezium-connect:
@@ -92,13 +94,13 @@ services:
       CONFIG_STORAGE_REPLICATION_FACTOR: 1
       OFFSET_STORAGE_REPLICATION_FACTOR: 1
       STATUS_STORAGE_REPLICATION_FACTOR: 1
-      
-      # Core High-Performance Converters
       KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
       VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
       VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
     volumes:
       - debezium_connect_data:/kafka/data
+    networks:
+      - eshop-microservice-network
 
   # 5. Isolated Kafka UI Management Dashboard
   kafka-ui:
@@ -112,12 +114,14 @@ services:
       - schema-registry
       - debezium-connect
     environment:
-      DYNAMIC_CONFIG_ENABLED: 'false' # Disabled in production to lock configuration alterations via UI
+      DYNAMIC_CONFIG_ENABLED: 'false'
       KAFKA_CLUSTERS_0_NAME: production-kraft-cluster
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
       KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
       KAFKA_CLUSTERS_0_KAFKACONNECT_0_NAME: debezium-cluster
       KAFKA_CLUSTERS_0_KAFKACONNECT_0_ADDRESS: http://debezium-connect:8083
+    networks:
+      - eshop-microservice-network
 
 volumes:
   product_catalog_data:

@@ -1,0 +1,21 @@
+{
+  "name": "product-catalog-mysql-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+    "tasks.max": "1",
+    "database.hostname": "product-catalog-db",
+    "database.port": "3311",
+    "database.user": "root",
+    "database.password": "prod_root_secure_pass_99",
+    "database.server.id": "184054",
+    "topic.prefix": "cdc",
+    "table.include.list": "product_catalog.products,product_catalog.brands,product_catalog.categories",
+    "schema.history.internal.kafka.topic": "schema-history.product-catalog",
+    "schema.history.internal.kafka.bootstrap.servers": "kafka:29092",
+    "key.converter": "org.apache.kafka.connect.storage.StringConverter",
+    "value.converter": "io.confluent.connect.avro.AvroConverter",
+    "value.converter.schema.registry.url": "http://schema-registry:8081",
+    "transforms": "unwrap",
+    "transforms.unwrap.type": "io.debezium.transforms.ExtractNewRecordState"
+  }
+}

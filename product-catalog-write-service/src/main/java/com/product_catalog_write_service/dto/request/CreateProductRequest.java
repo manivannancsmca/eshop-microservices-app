@@ -3,6 +3,8 @@ package com.product_catalog_write_service.dto.request;
 import java.math.BigDecimal;
 import java.util.Set;
 
+import com.product_catalog_write_service.entity.ProductStatus;
+
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
@@ -38,7 +40,7 @@ public class CreateProductRequest {
     @NotNull
     private Long categoryId;
 
-    private Set<String> tags;
+    //private Set<String> tags;
 
     @NotNull
     @PositiveOrZero
@@ -47,5 +49,8 @@ public class CreateProductRequest {
     @NotNull
     @PositiveOrZero
     private Integer stockCount;
+
+    @NotNull
+    private ProductStatus status;
 
 }

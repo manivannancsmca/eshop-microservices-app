@@ -18,9 +18,11 @@ import com.product_catalog_write_service.service.ProductOutboxService;
 import com.product_catalog_write_service.util.AvroSerializerUtil;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProductOutboxServiceImpl implements ProductOutboxService {
 
     private final OutboxRepository outboxRepository;
@@ -43,7 +45,7 @@ public class ProductOutboxServiceImpl implements ProductOutboxService {
     private void saveOutboxEvent(Product product,
             String productStatus,
             String eventType) {
-
+            log.info("saveOutboxEvent ::::::::: ", productStatus);
         ProductEvent payload = buildProductEvent(product, productStatus);
 
         byte[] avroBytes = AvroSerializerUtil.serializeProductPayload(payload);
@@ -68,7 +70,7 @@ public class ProductOutboxServiceImpl implements ProductOutboxService {
                 .setBrandName(product.getBrand().getBrandName())
                 .setCategoryId(product.getCategory().getId())
                 .setCategoryName(product.getCategory().getCategoryName())
-                .setTags(new ArrayList<>(product.getTags()))
+                //.setTags(new ArrayList<>(product.getTags()))
                 .setPrice(toDecimal(product.getPrice()))
                 .setStockCount(product.getStockCount())
                 .setStatus(status)

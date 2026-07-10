@@ -1,0 +1,16 @@
+FROM debezium/connect:2.5
+
+USER root
+
+# Install unzip to unpack the confluent package
+RUN microdnf -y install unzip && microdnf clean all
+
+# Download the Confluent Avro Converter package matching your 7.6.0 cluster setup
+RUN curl -fSL -o /tmp/avro-converter.zip \
+    https://packages.confluent.io/archive/7.6/confluentinc-kafka-connect-avro-converter-7.6.0.zip
+
+# Unpack the downloaded package directly into the Debezium connect plugins folder
+RUN unzip /tmp/avro-converter.zip -d /kafka/connect/ \
+    && rm /tmp/avro-converter.zip
+
+USER kafka

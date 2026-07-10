@@ -9,11 +9,13 @@ import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedBy;
 import org.springframework.data.annotation.LastModifiedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
@@ -36,6 +38,7 @@ import lombok.ToString;
 
 @Entity
 @Table(name = "products")
+@EntityListeners(AuditingEntityListener.class)
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -69,9 +72,9 @@ public class Product {
     @JoinColumn(name = "category_id", nullable = false)
     private Category category;
 
-    @ElementCollection(fetch = FetchType.LAZY)
-    @CollectionTable(name = "product_tags")
-    private Set<String> tags = new HashSet<>();
+    // @ElementCollection(fetch = FetchType.LAZY)
+    // @CollectionTable(name = "product_tags")
+    // private Set<String> tags = new HashSet<>();
 
     @NotNull
     @PositiveOrZero

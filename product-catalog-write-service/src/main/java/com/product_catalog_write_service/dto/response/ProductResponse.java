@@ -36,7 +36,7 @@ public class ProductResponse {
 
     private String categoryName;
 
-    private Set<String> tags;
+    //private Set<String> tags;
 
     private BigDecimal price;
 

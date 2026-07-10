@@ -73,8 +73,9 @@ services:
 
   # 4. Debezium Distributed Connect Cluster
   # 4. Debezium Distributed Connect Cluster (Updated Image)
+  # 4. Debezium Distributed Connect Cluster (Fixed Configuration Keys)
   debezium-connect:
-    image: confluentinc/cp-kafka-connect:7.6.0 # Swapped to Confluent image which contains AvroConverter
+    image: confluentinc/cp-kafka-connect:7.6.0
     container_name: debezium-connect-cluster
     restart: unless-stopped
     depends_on:
@@ -87,26 +88,28 @@ services:
     ports:
       - "8083:8083"
     environment:
-      BOOTSTRAP_SERVERS: kafka:29092
-      GROUP_ID: product_cdc_group
-      CONFIG_STORAGE_TOPIC: product_connect_configs
-      OFFSET_STORAGE_TOPIC: product_connect_offsets
-      STATUS_STORAGE_TOPIC: product_connect_statuses
-      CONFIG_STORAGE_REPLICATION_FACTOR: 1
-      OFFSET_STORAGE_REPLICATION_FACTOR: 1
-      STATUS_STORAGE_REPLICATION_FACTOR: 1
+      # Added CONNECT_ prefix to all system properties
+      CONNECT_BOOTSTRAP_SERVERS: kafka:29092
+      CONNECT_GROUP_ID: product_cdc_group
+      CONNECT_CONFIG_STORAGE_TOPIC: product_connect_configs
+      CONNECT_OFFSET_STORAGE_TOPIC: product_connect_offsets
+      CONNECT_STATUS_STORAGE_TOPIC: product_connect_statuses
+      CONNECT_CONFIG_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_OFFSET_STORAGE_REPLICATION_FACTOR: 1
+      CONNECT_STATUS_STORAGE_REPLICATION_FACTOR: 1
       
-      KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
-      VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
-      VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      # Converter configurations mapping properly
+      CONNECT_KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
+      CONNECT_VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
+      CONNECT_VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
       
-      # This command automatically downloads and installs the Debezium MySQL connector into the Confluent image on boot
       CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/filestream-connectors,/usr/share/confluent-hub-components"
     command: 
       - /bin/bash
       - -c
       - |
-        confluent-hub install --no-prompt debezium/debezium-connector-mysql:2.5.4
+        # Use clean marketplace identifier syntax to install the plugin safely
+        confluent-hub install --no-prompt debezium/debezium-connector-mysql:latest
         /etc/confluent/docker/run
     volumes:
       - debezium_connect_data:/kafka/data

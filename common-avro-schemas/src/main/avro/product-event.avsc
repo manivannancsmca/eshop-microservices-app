@@ -1,0 +1,98 @@
+{
+  "type": "record",
+  "name": "ProductEvent",
+  "namespace": "com.common.avro.schemas",
+  "doc": "Production-ready flattened product event schema for Kafka.",
+  "fields": [
+    {
+      "name": "eventId",
+      "type": "string",
+      "doc": "Unique UUID for tracing this specific event instance."
+    },
+    {
+      "name": "id",
+      "type": "long",
+      "doc": "The unique database identifier of the product."
+    },
+    {
+      "name": "sku",
+      "type": "string",
+      "doc": "The unique Stock Keeping Unit identifier."
+    },
+    {
+      "name": "name",
+      "type": "string",
+      "doc": "The name of the product."
+    },
+    {
+      "name": "description",
+      "type": ["null", "string"],
+      "default": null,
+      "doc": "Detailed description of the product."
+    },
+    {
+      "name": "brandId",
+      "type": "long",
+      "doc": "The unique identifier of the associated brand."
+    },
+    {
+      "name": "brandName",
+      "type": "string",
+      "doc": "The name of the brand."
+    },
+    {
+      "name": "categoryId",
+      "type": "long",
+      "doc": "The unique identifier of the associated category."
+    },
+    {
+      "name": "categoryName",
+      "type": "string",
+      "doc": "The name of the category."
+    },
+    {
+      "name": "tags",
+      "type": {
+        "type": "array",
+        "items": "string"
+      },
+      "default": [],
+      "doc": "A collection of tags associated with the product."
+    },
+    {
+      "name": "price",
+      "type": {
+        "type": "bytes",
+        "logicalType": "decimal",
+        "precision": 12,
+        "scale": 2
+      },
+      "doc": "The price of the product."
+    },
+    {
+      "name": "stockCount",
+      "type": ["null", "int"],
+      "default": null,
+      "doc": "Current inventory count."
+    },
+    {
+      "name": "status",
+      "type": "string",
+      "doc": "The current lifecycle status of the product (e.g., ACTIVE, DRAFT, INACTIVE). Uses string for backward compatibility."
+    },
+    {
+      "name": "isDeleted",
+      "type": "boolean",
+      "default": false,
+      "doc": "Flag indicating if the product has been soft-deleted."
+    },
+    {
+      "name": "updatedAt",
+      "type": {
+        "type": "long",
+        "logicalType": "timestamp-millis"
+      },
+      "doc": "Epoch timestamp indicating when this record was last updated in the source system."
+    }
+  ]
+}

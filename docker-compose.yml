@@ -72,8 +72,9 @@ services:
       - eshop-microservice-network
 
   # 4. Debezium Distributed Connect Cluster
+  # 4. Debezium Distributed Connect Cluster (Updated Image)
   debezium-connect:
-    image: debezium/connect:2.5
+    image: confluentinc/cp-kafka-connect:7.6.0 # Swapped to Confluent image which contains AvroConverter
     container_name: debezium-connect-cluster
     restart: unless-stopped
     depends_on:
@@ -94,9 +95,19 @@ services:
       CONFIG_STORAGE_REPLICATION_FACTOR: 1
       OFFSET_STORAGE_REPLICATION_FACTOR: 1
       STATUS_STORAGE_REPLICATION_FACTOR: 1
+      
       KEY_CONVERTER: org.apache.kafka.connect.storage.StringConverter
       VALUE_CONVERTER: io.confluent.connect.avro.AvroConverter
       VALUE_CONVERTER_SCHEMA_REGISTRY_URL: http://schema-registry:8081
+      
+      # This command automatically downloads and installs the Debezium MySQL connector into the Confluent image on boot
+      CONNECT_PLUGIN_PATH: "/usr/share/java,/usr/share/filestream-connectors,/usr/share/confluent-hub-components"
+    command: 
+      - /bin/bash
+      - -c
+      - |
+        confluent-hub install --no-prompt debezium/debezium-connector-mysql:2.5.4
+        /etc/confluent/docker/run
     volumes:
       - debezium_connect_data:/kafka/data
     networks:

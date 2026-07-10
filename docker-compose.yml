@@ -12,7 +12,7 @@ services:
       - MYSQL_ROOT_PASSWORD=prod_root_secure_pass_99
       - MYSQL_USER=appuser
       - MYSQL_PASSWORD=apppassword
-      - MYSQL_DATABASE=product_catalog_db
+      - MYSQL_DATABASE=product_catalog
     volumes:
       - product_catalog_data:/var/lib/mysql
       - ./mysql_config:/etc/mysql/conf.d

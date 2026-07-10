@@ -46,6 +46,9 @@
 				<groupId>org.apache.avro</groupId>
 				<artifactId>avro-maven-plugin</artifactId>
 				<version>${avro.version}</version>
+				<configuration>
+			        <enableDecimalLogicalType>true</enableDecimalLogicalType>
+			    </configuration>
 				<executions>
 					<execution>
 						<phase>generate-sources</phase>

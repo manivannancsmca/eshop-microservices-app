@@ -16,6 +16,7 @@ import com.product_catalog_write_service.repository.BrandRepository;
 import com.product_catalog_write_service.repository.CategoryRepository;
 import com.product_catalog_write_service.repository.ProductRepository;
 import com.product_catalog_write_service.service.ProductCommandService;
+import com.product_catalog_write_service.service.ProductOutboxService;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -31,6 +32,8 @@ public class ProductCommandServiceImpl
     private final CategoryRepository categoryRepository;
 
     private final ProductMapper productMapper;
+
+    private final ProductOutboxService productOutboxService;
 
     @Override
     public ProductResponse create(CreateProductRequest request) {
@@ -51,6 +54,7 @@ public class ProductCommandServiceImpl
         product = productRepository.save(product);
 
         // publish ProductCreatedEvent
+        productOutboxService.createProduct(product);
 
         return productMapper.toResponse(product);
     }

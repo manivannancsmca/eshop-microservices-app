@@ -26,7 +26,7 @@ import java.util.List;
 public class ProductDocument {
 
     @Id
-    private String id; // maps to your 'id' field, stored as String for Elasticsearch compatibility
+    private String id; // Must be String
 
     @Field(type = FieldType.Keyword)
     private String eventId;
@@ -43,7 +43,7 @@ public class ProductDocument {
     @Field(type = FieldType.Long)
     private Long brandId;
 
-    @Field(type = FieldType.Keyword) // Keyword type allows filtering and grouping by exact brand name
+    @Field(type = FieldType.Keyword)
     private String brandName;
 
     @Field(type = FieldType.Long)
@@ -52,11 +52,11 @@ public class ProductDocument {
     @Field(type = FieldType.Keyword)
     private String categoryName;
 
-    @Field(type = FieldType.Keyword) // Storing tags as array of keywords for category matching
+    @Field(type = FieldType.Keyword)
     private List<String> tags;
 
-    @Field(type = FieldType.Double) // Best performance mapping for numeric sorting/filtering in ES
-    private BigDecimal price;
+    @Field(type = FieldType.Double)
+    private Double price; // Updated to Double to prevent instantiation crash!
 
     @Field(type = FieldType.Integer)
     private Integer stockCount;
@@ -67,8 +67,8 @@ public class ProductDocument {
     @Field(type = FieldType.Boolean)
     private Boolean isDeleted;
 
-    @Field(type = FieldType.Date, format = DateFormat.epoch_millis)
-    private Long updatedAt;
+    @Field(type = FieldType.Long)
+    private Long updatedAt; // Mapped directly as Long
 
     
 }

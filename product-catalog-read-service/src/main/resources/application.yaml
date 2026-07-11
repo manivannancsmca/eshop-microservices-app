@@ -66,16 +66,16 @@ spring:
 
   elasticsearch:
     uris: http://localhost:9200
-    username: elastic
-    password: ${ELASTIC_PASSWORD}
+    # username: elastic
+    # password: ${ELASTIC_PASSWORD}
     connection-timeout: 5s
     socket-timeout: 60s
 
   # MySQL Core Datasource Layout
   datasource:
-    url: jdbc:mysql://localhost:3311/product_catalog_read_remediation?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&useLocalSessionState=true&rewriteBatchedStatements=true&cachePrepStmts=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048&useServerPrepStmts=true
-    username: root
-    password: prod_root_secure_pass_99
+    url: jdbc:mysql://localhost:3312/product_catalog_read_remediation?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&useLocalSessionState=true&rewriteBatchedStatements=true&cachePrepStmts=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048&useServerPrepStmts=true
+    username: appuser
+    password: apppassword
     driver-class-name: com.mysql.cj.jdbc.Driver
     
     # HikariCP Performance Tuning & Connection Pooling

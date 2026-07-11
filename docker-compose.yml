@@ -26,6 +26,31 @@ services:
     networks:
       - eshop-microservice-network
 
+  # 1. Production MySQL Storage Layer
+  product-catalog-read-db:
+    image: mysql:8.0
+    container_name: product-catalog-read-db
+    restart: unless-stopped
+    ports:
+      - "3312:3306" # Your app on localhost will connect to port 3311
+    environment:
+      - MYSQL_ROOT_PASSWORD=prod_root_secure_pass_99
+      - MYSQL_USER=appuser
+      - MYSQL_PASSWORD=apppassword
+      - MYSQL_DATABASE=product_catalog_read_remediation
+    volumes:
+      - product_catalog_read_data:/var/lib/mysql
+      - ./infrastructure/mysql_config:/etc/mysql/conf.d # Keeps your custom configuration organized
+    command: --default-authentication-plugin=mysql_native_password --binlog-format=ROW --binlog-row-image=FULL
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pprod_root_secure_pass_99"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks:
+      - eshop-microservice-network
+
   # 2. Apache Kafka Controller/Broker (KRaft Mode)
   kafka:
     image: confluentinc/cp-kafka:7.6.0
@@ -145,6 +170,7 @@ services:
 
 volumes:
   product_catalog_data:
+  product_catalog_read_data:
   kafka_production_data:
   debezium_connect_data:
   es_data:

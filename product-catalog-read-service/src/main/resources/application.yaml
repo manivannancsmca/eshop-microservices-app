@@ -71,6 +71,49 @@ spring:
     connection-timeout: 5s
     socket-timeout: 60s
 
+  # MySQL Core Datasource Layout
+  datasource:
+    url: jdbc:mysql://localhost:3311/product_catalog_read_remediation?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&useLocalSessionState=true&rewriteBatchedStatements=true&cachePrepStmts=true&prepStmtCacheSize=250&prepStmtCacheSqlLimit=2048&useServerPrepStmts=true
+    username: root
+    password: prod_root_secure_pass_99
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    
+    # HikariCP Performance Tuning & Connection Pooling
+    hikari:
+      pool-name: HikariPool-ReadServiceRemediation
+      # Maximum number of idle and active connections in the pool
+      maximum-pool-size: 10
+      # Minimum number of idle connections HikariCP tries to maintain
+      minimum-idle: 5
+      # Maximum time (ms) that a consumer thread will wait for a connection from the pool before throwing an exception
+      connection-timeout: 30000
+      # Maximum amount of time (ms) that a connection is allowed to sit idle in the pool
+      idle-timeout: 600000
+      # Maximum lifetime (ms) of a connection in the pool. Prevents connection aging.
+      max-lifetime: 1800000
+      # Query used to quickly validate if a connection is still alive before handed to the application
+      connection-test-query: SELECT 1
+      # Time (ms) a connection can be out of the pool before a leak is logged (0 means disabled). Use 20000 (20s) for debugging leaks.
+      leak-detection-threshold: 0
+
+  # JPA & Hibernate Production Optimizations
+  jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
+    # 'update' is fine for development/staging, but use 'validate' in absolute production environments with flyway/liquibase scripts
+    hibernate:
+      ddl-auto: update 
+    properties:
+      hibernate:
+        # Optimizes performance by executing multiple saves in batches rather than individual roundtrips
+        jdbc:
+          batch_size: 50
+          order_inserts: true
+          order_updates: true
+        # Prevent resource-heavy memory leaks by skipping unnecessary comment generation
+        use_sql_comments: false
+        format_sql: false
+    show-sql: false
+
 springdoc:
   api-docs:
     path: /api-docs

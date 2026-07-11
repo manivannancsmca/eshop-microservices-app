@@ -57,52 +57,44 @@ public class DebeziumProductSyncConsumer {
     }
 
     private void saveDocument(ProductEvent productAvroEvent, Acknowledgment ack) {
-        try {
-            // 3. Map Avro fields to your Elasticsearch Document
-            ProductDocument doc = new ProductDocument();
-            doc.setId(String.valueOf(productAvroEvent.getId()));
-            doc.setEventId(productAvroEvent.getEventId().toString());
-            doc.setSku(productAvroEvent.getSku().toString());
-            doc.setName(productAvroEvent.getName().toString());
 
-            // Handle nullable description
-            doc.setDescription(
-                    productAvroEvent.getDescription() != null ? productAvroEvent.getDescription().toString() : "");
+        // 3. Map Avro fields to your Elasticsearch Document
+        ProductDocument doc = new ProductDocument();
+        doc.setId(String.valueOf(productAvroEvent.getId()));
+        doc.setEventId(productAvroEvent.getEventId().toString());
+        doc.setSku(productAvroEvent.getSku().toString());
+        doc.setName(productAvroEvent.getName().toString());
 
-            doc.setBrandId(productAvroEvent.getBrandId());
-            doc.setBrandName(productAvroEvent.getBrandName().toString());
-            doc.setCategoryId(productAvroEvent.getCategoryId());
-            doc.setCategoryName(productAvroEvent.getCategoryName().toString());
+        // Handle nullable description
+        doc.setDescription(
+                productAvroEvent.getDescription() != null ? productAvroEvent.getDescription().toString() : "");
 
-            // Safe conversion of Avro Decimal logic layer to Java BigDecimal
-            // BigDecimal extractedPrice = productAvroEvent.getPrice();
+        doc.setBrandId(productAvroEvent.getBrandId());
+        doc.setBrandName(productAvroEvent.getBrandName().toString());
+        doc.setCategoryId(productAvroEvent.getCategoryId());
+        doc.setCategoryName(productAvroEvent.getCategoryName().toString());
 
-            java.nio.ByteBuffer buffer = productAvroEvent.getPrice();
-            byte[] bytes = new byte[buffer.remaining()];
-            buffer.get(bytes);
+        // Safe conversion of Avro Decimal logic layer to Java BigDecimal
+        // BigDecimal extractedPrice = productAvroEvent.getPrice();
 
-            BigDecimal extractedPrice = new BigDecimal(new BigInteger(bytes), 2);
-            doc.setPrice(extractedPrice);
+        java.nio.ByteBuffer buffer = productAvroEvent.getPrice();
+        byte[] bytes = new byte[buffer.remaining()];
+        buffer.get(bytes);
 
-            doc.setStockCount(productAvroEvent.getStockCount());
-            doc.setStatus(productAvroEvent.getStatus().toString());
-            doc.setIsDeleted(productAvroEvent.getIsDeleted());
+        BigDecimal extractedPrice = new BigDecimal(new BigInteger(bytes), 2);
+        doc.setPrice(extractedPrice);
 
-            Instant timestampInstant = productAvroEvent.getUpdatedAt();
-            doc.setUpdatedAt(timestampInstant.toEpochMilli());
+        doc.setStockCount(productAvroEvent.getStockCount());
+        doc.setStatus(productAvroEvent.getStatus().toString());
+        doc.setIsDeleted(productAvroEvent.getIsDeleted());
 
-            // 4. Commit directly into Elasticsearch index
-            productRepository.save(doc);
+        Instant timestampInstant = productAvroEvent.getUpdatedAt();
+        doc.setUpdatedAt(timestampInstant.toEpochMilli());
 
-            ack.acknowledge();
+        // 4. Commit directly into Elasticsearch index
+        productRepository.save(doc);
 
-        } catch (Exception e) {
-            // Log the error carefully without breaking the loop or losing track of the
-            // offset partition
-            System.err.println("Failed to cleanly sync tracking instance to search layer: " + e.getMessage());
-            // Pro Tip: In production, send failed events to a Dead Letter Topic (DLT) here
-            // instead of stalling the pipeline
-        }
+        ack.acknowledge();
+
     }
-
 }

@@ -81,8 +81,11 @@ public class DebeziumProductSyncConsumer {
         byte[] bytes = new byte[buffer.remaining()];
         buffer.get(bytes);
 
-        BigDecimal extractedPrice = new BigDecimal(new BigInteger(bytes), 2);
-        doc.setPrice(extractedPrice);
+        // 1. Reconstruct the precise price as a BigDecimal first
+        BigDecimal extractedPrice = new BigDecimal(new java.math.BigInteger(bytes), 2);
+
+        // 2. Convert it safely to Double to match your updated Elasticsearch document type
+        doc.setPrice(extractedPrice.doubleValue());
 
         doc.setStockCount(productAvroEvent.getStockCount());
         doc.setStatus(productAvroEvent.getStatus().toString());

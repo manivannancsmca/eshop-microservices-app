@@ -5,6 +5,9 @@ spring:
   application:
     name: product-catalog-read-service
   kafka:
+    admin:
+      # Automatically creates the DLT topic if it doesn't exist locally
+      auto-create: true
     consumer:
       group-id: product-read-service-group
 

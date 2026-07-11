@@ -25,7 +25,7 @@ public class DebeziumProductSyncConsumer {
 
     private final ProductRepository productRepository;
 
-    @KafkaListener(topics = "cdc.product_catalog.products", groupId = "product-read-service-group")
+    @KafkaListener(topics = "cdc.product_catalog.outbox", groupId = "product-read-service-group")
     public void syncWithElasticsearch(ConsumerRecord<String, ProductEvent> record, Acknowledgment ack) {
 
         String productId = record.key();

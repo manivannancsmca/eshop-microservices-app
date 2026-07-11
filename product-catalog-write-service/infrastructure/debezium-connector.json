@@ -9,7 +9,7 @@
     "database.password": "prod_root_secure_pass_99",
     "database.server.id": "184054",
     "topic.prefix": "cdc",
-    "table.include.list": "product_catalog.products,product_catalog.brands,product_catalog.categories",
+    "table.include.list": "product_catalog.products,product_catalog.brands,product_catalog.categories,product_catalog.outbox",
     "schema.history.internal.kafka.topic": "schema-history.product-catalog",
     "schema.history.internal.kafka.bootstrap.servers": "kafka:29092",
     "key.converter": "org.apache.kafka.connect.storage.StringConverter",

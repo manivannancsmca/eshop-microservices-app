@@ -6,6 +6,8 @@ import com.product_catalog_read_service.entity.ProductDocument;
 import com.product_catalog_read_service.service.ProductSearchService;
 
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -48,6 +50,21 @@ public class ProductSearchController {
                 "Product search results compiled successfully.",
                 searchResultPage);
 
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<Page<ProductDocument>>> getAllProducts(
+            @PageableDefault(page = 0, size = 10) Pageable pageable) {
+        
+        Page<ProductDocument> productsPage = productSearchService.findAll(pageable);
+        
+        ApiResponse<Page<ProductDocument>> response = ApiResponse.success(
+                HttpStatus.OK.value(),
+                "All products retrieved successfully.",
+                productsPage
+        );
+        
         return ResponseEntity.ok(response);
     }
 }

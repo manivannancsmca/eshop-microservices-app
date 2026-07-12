@@ -3,15 +3,18 @@ package com.product_catalog_read_service.service.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.elasticsearch.client.elc.NativeQuery;
 import org.springframework.data.elasticsearch.client.elc.NativeQueryBuilder;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;
 import org.springframework.data.elasticsearch.core.SearchHit;
 import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.query.StringQuery;
 import org.springframework.stereotype.Service;
 
 import com.product_catalog_read_service.dto.ProductSearchRequest;
@@ -117,6 +120,30 @@ public class ProductSearchServiceImpl implements ProductSearchService {
                 .toList();
 
         return new PageImpl<>(products, pageable, searchHits.getTotalHits());
+    }
+
+    @Override
+    public Page<ProductDocument> findAll(Pageable pageable) {
+        // 1. Define a literal match_all body syntax passing standard pagination rules directly to the constructor
+        StringQuery matchAllQuery = new StringQuery("{ \"match_all\": {} }", pageable);
+
+        // 2. Execute search using the explicit implementation instance
+        SearchHits<ProductDocument> searchHits = elasticsearchOperations.search(
+                matchAllQuery, 
+                ProductDocument.class
+        );
+
+        // 3. Extract your document collection cleanly from the returned metadata layer
+        List<ProductDocument> products = searchHits.getSearchHits().stream()
+                .map(SearchHit::getContent)
+                .collect(Collectors.toList());
+
+        // 4. Return as standard Spring Data page impl object
+        return new PageImpl<>(
+                products, 
+                pageable, 
+                searchHits.getTotalHits()
+        );
     }
 
 }

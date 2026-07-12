@@ -168,6 +168,21 @@ services:
     networks:
       - eshop-microservice-network
 
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.1
+    container_name: kibana-dashboard
+    restart: unless-stopped
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_started
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+      - XPACK_SECURITY_ENABLED=false
+    networks:
+      - eshop-microservice-network
+
 volumes:
   product_catalog_data:
   product_catalog_read_data:

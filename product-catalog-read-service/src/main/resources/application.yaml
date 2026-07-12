@@ -6,63 +6,48 @@ spring:
     name: product-catalog-read-service
   kafka:
     admin:
-      # Automatically creates the DLT topic if it doesn't exist locally
       auto-create: true
+    bootstrap-servers: localhost:9092
+    
     consumer:
       group-id: product-read-service-group
-
-      # Reads from the beginning if a group is new, preventing data gaps
       auto-offset-reset: earliest
-
-      # 1. IDEMPOTENCY LAYER: Disable automated background auto-commits.
-      # We manually commit offsets ONLY after data is safely acknowledged by Elasticsearch.
       enable-auto-commit: false
-
-      # 2. CONSUMER LAG & MEMORY MANAGEMENT
-      # Prevents the JVM from running out of memory during a high lag catch-up loop.
       max-poll-records: 500
+      
+      # 1. WRAP THE DESERIALIZERS TO CATCH SERIALIZATION CRASHES SAFELY
+      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      
+      properties:
+        # Delegate down to the actual target deserializers underneath the error handler wrapper
+        spring.deserializer.key.delegate.class: org.apache.kafka.common.serialization.StringDeserializer
+        spring.deserializer.value.delegate.class: io.confluent.kafka.serializers.KafkaAvroDeserializer
+        #spring.deserializer.value.delegate.class: io.confluent.kafka.serializers.KafkaAvroDeserializer
+        
+        schema.registry.url: http://localhost:8081
+        
+        # 2. SWITCH OFF STRICT LOOKUP CRASHES
+        # Setting this to false prevents the Confluent driver from looking up 'cdc.product_catalog.outbox.Value'.
+        # It reads the message as a structural GenericRecord, which we will map inside the code.
+        # Keep this true to continue using your compiled JAR class
+        specific.avro.reader: true
 
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
-    bootstrap-servers: localhost:9092
-    properties:
-      specific:
-        avro:
-          reader: 'true'
-      schema:
-        registry:
-          url: http://localhost:8081
+        # Instruct Kafka to look at your explicit class mapping first
+        specific.avro.reader.high.priority: true
 
-      # 3. REBALANCE & HEARTBEAT TIMINGS
-      # If processing a batch takes too long, Kafka thinks the consumer is dead. 
-      # We give it 5 minutes (300000ms) to safely write the 500 records into Elasticsearch.
-      max:
-        poll:
-          interval:
-            ms: 300000
+        avro.specific.reader.map: "cdc.product_catalog.outbox.Value:com.common.avro.schemas.ProductEvent, cdc.product_catalog.outbox.ProductEvent:com.common.avro.schemas.ProductEvent"
+        
+        max.poll.interval.ms: 300000
+        session.timeout.ms: 45000
+        heartbeat.interval.ms: 15000
+        fetch.min.bytes: 1
+        fetch.max.wait.ms: 500
+        avro.use.logical.type.converters: true
 
-      # Quick heartbeat checks to instantly detect absolute container death
-      session:
-        timeout:
-          ms: 45000
-      heartbeat:
-        interval:
-          ms: 15000
-
-      # Tune TCP fetch thresholds for optimized payload ingestion speeds
-      fetch:
-        min:
-          bytes: 1
-        max:
-          wait:
-            ms: 500
-
-      listner:
-        # MANUAL_IMMEDIATE tells Spring to commit the offset to Kafka the exact millisecond 
-        # we call acknowledgment.acknowledge() in our code.
-        ack-mode: manual_immediate
-        # Allows concurrent threads within the same container to process multiple partitions parallelly
-        concurrency: 3
+    listener:
+      ack-mode: manual_immediate
+      concurrency: 3
 
   elasticsearch:
     uris: http://localhost:9200

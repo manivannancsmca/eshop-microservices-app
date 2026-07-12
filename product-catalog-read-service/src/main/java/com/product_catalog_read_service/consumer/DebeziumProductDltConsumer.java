@@ -23,53 +23,41 @@ public class DebeziumProductDltConsumer {
     private final FailedProductEventRepository failedEventRepository;
 
     @KafkaListener(topics = "cdc.product_catalog.outbox.DLT", groupId = "product-dlt-logging-group")
-    public void consumeDeadLetterRecords(
-            ConsumerRecord<String, ProductEvent> record,
-            @Header(name = KafkaHeaders.DLT_EXCEPTION_MESSAGE, required = false) String exceptionMessage,
-            @Header(name = KafkaHeaders.DLT_ORIGINAL_TOPIC, required = false) String originalTopic) {
+public void consumeDeadLetterRecords(
+        ConsumerRecord<String, org.apache.avro.generic.GenericRecord> record, // Keep this as GenericRecord
+        @Header(name = KafkaHeaders.DLT_EXCEPTION_MESSAGE, required = false) String exceptionMessage,
+        @Header(name = KafkaHeaders.DLT_ORIGINAL_TOPIC, required = false) String originalTopic) {
 
-        log.info("""
-                ======================================================================
-                ALERT: CRITICAL RECORD ROUTED TO DEAD LETTER TOPIC (DLT)
-                Original Topic    : %s
-                Failed Key        : %s
-                Exception Root    : %s
-                ======================================================================
-                """,
-                originalTopic,
-                record.key(),
-                exceptionMessage);
+    log.error("""
+            ======================================================================
+            ALERT: CRITICAL RECORD ROUTED TO DEAD LETTER TOPIC (DLT)
+            Original Topic    : {}
+            Failed Key        : {}
+            Exception Root    : {}
+            ======================================================================
+            """, originalTopic, record.key(), exceptionMessage);
 
-        try {
-            FailedProductEvent quarantineRecord = new FailedProductEvent();
-            quarantineRecord.setEventKey(record.key());
+    try {
+        FailedProductEvent quarantineRecord = new FailedProductEvent();
+        quarantineRecord.setEventKey(record.key());
 
-            // Convert the Avro model cleanly to a JSON string representation using the
-            // built-in .toString() layout
-            if (record.value() != null) {
-                quarantineRecord.setPayloadJson(record.value().toString());
-            } else {
-                quarantineRecord.setPayloadJson("{ \"info\": \"Tombstone / Deletion Null Payload\" }");
-            }
-
-            quarantineRecord.setOriginalTopic(originalTopic != null ? originalTopic : "UNKNOWN");
-            quarantineRecord.setPartitionId(record.partition());
-            quarantineRecord.setOffsetValue(record.offset());
-
-            // Truncate exception strings if necessary to fit clean column constraints
-            quarantineRecord
-                    .setExceptionMessage(exceptionMessage != null ? exceptionMessage : "No exception string passed");
-            quarantineRecord.setStatus("PENDING_REVIEW");
-            quarantineRecord.setCreatedAt(LocalDateTime.now());
-
-            // Commit to remediation tracking database
-            failedEventRepository.save(quarantineRecord);
-        } catch (Exception fatalDbException) {
-            // Ultimate fallback safety block to ensure failure storage itself never brings
-            // down consumer loops
-            log.info("CRITICAL FAULT: Unable to write data to remediation tracking system: "
-                    + fatalDbException.getMessage());
+        if (record.value() != null) {
+            // Converts the generic structural payload cleanly into string layout format
+            quarantineRecord.setPayloadJson(record.value().toString());
+        } else {
+            quarantineRecord.setPayloadJson("{ \"info\": \"Tombstone / Deletion Null Payload\" }");
         }
 
+        quarantineRecord.setOriginalTopic(originalTopic != null ? originalTopic : "UNKNOWN");
+        quarantineRecord.setPartitionId(record.partition());
+        quarantineRecord.setOffsetValue(record.offset());
+        quarantineRecord.setExceptionMessage(exceptionMessage != null ? exceptionMessage : "No exception passed");
+        quarantineRecord.setStatus("PENDING_REVIEW");
+        quarantineRecord.setCreatedAt(LocalDateTime.now());
+
+        failedEventRepository.save(quarantineRecord);
+    } catch (Exception fatalDbException) {
+        log.error("CRITICAL FAULT: Unable to write data to remediation tracking system: {}", fatalDbException.getMessage());
     }
+}
 }

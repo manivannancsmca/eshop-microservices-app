@@ -1,45 +1,51 @@
 package com.product_catalog_read_service.config;
 
-import org.apache.kafka.clients.admin.NewTopic;
+import io.confluent.kafka.serializers.KafkaAvroSerializer;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.config.TopicBuilder;
+import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.listener.DeadLetterPublishingRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.util.backoff.FixedBackOff;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Configuration
 public class KafkaErrorHandlingConfig {
 
     /**
-     * Explicitly provision the DLT topic with healthy partition architecture
+     * Dedicated ProducerFactory ensuring the DLT subsystem uses the Avro Serializer,
+     * completely eliminating the ClassCastException.
      */
     @Bean
-    public NewTopic productDltTopic() {
-        return TopicBuilder.name("cdc.product_catalog.outbox.DLT")
-                .partitions(3)
-                .replicas(1)
-                .build();
+    public ProducerFactory<Object, Object> dltProducerFactory() {
+        Map<String, Object> configProps = new HashMap<>();
+        configProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        configProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
+        // Explicitly set Confluent Avro Serializer for values
+        configProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, KafkaAvroSerializer.class);
+        configProps.put("schema.registry.url", "http://localhost:8081");
+        return new DefaultKafkaProducerFactory<>(configProps);
     }
 
-    /**
-     * Define the Global Error Handler to manage retries and DLT routing
-     */
     @Bean
-    public DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> kafkaTemplate) {
-        // 1. Configure the recovery action: Publish failed events to the '.DLT' topic suffix
-        DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(kafkaTemplate);
+    public KafkaTemplate<Object, Object> dltKafkaTemplate() {
+        return new KafkaTemplate<>(dltProducerFactory());
+    }
 
-        // 2. Configure retry logic: 3 execution attempts max, spaced 2000ms apart
+    @Bean
+    public DefaultErrorHandler errorHandler(KafkaTemplate<Object, Object> dltKafkaTemplate) {
+        // Tie the recovery action safely to the Avro-enabled template
+        DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(dltKafkaTemplate);
+        
+        // 3 execution attempts max, spaced 2000ms apart
         FixedBackOff backOff = new FixedBackOff(2000L, 2L);
-
-        // 3. Assemble the Error Handler
-        DefaultErrorHandler errorHandler = new DefaultErrorHandler(recoverer, backOff);
         
-        // Don't waste time retrying non-recoverable errors (like a JSON/Avro parsing defect)
-        errorHandler.addNotRetryableExceptions(NullPointerException.class); 
-        
-        return errorHandler;
+        return new DefaultErrorHandler(recoverer, backOff);
     }
 }

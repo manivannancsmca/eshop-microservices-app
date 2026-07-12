@@ -134,13 +134,18 @@ public class DebeziumProductSyncConsumer {
 
         // Convert the Instant to a formatted string matching MySQL's structure (e.g.,
         // "2026-07-12 17:11:02")
-        java.time.Instant timestampInstant = productAvroEvent.getUpdatedAt();
-        java.time.format.DateTimeFormatter mysqlFormatter = java.time.format.DateTimeFormatter
-                .ofPattern("yyyy-MM-dd HH:mm:ss")
-                .withZone(java.time.ZoneId.systemDefault()); // Or use ZoneId.of("UTC") depending on your DB
-                                                             // configuration
+        // java.time.Instant timestampInstant = productAvroEvent.getUpdatedAt();
+        // java.time.format.DateTimeFormatter mysqlFormatter =
+        // java.time.format.DateTimeFormatter
+        // .ofPattern("yyyy-MM-dd HH:mm:ss")
+        // .withZone(java.time.ZoneId.systemDefault()); // Or use ZoneId.of("UTC")
+        // depending on your DB
+        // // configuration
 
-        doc.setUpdatedAt(mysqlFormatter.format(timestampInstant));
+        // doc.setUpdatedAt(mysqlFormatter.format(timestampInstant));
+
+        Instant timestampInstant = productAvroEvent.getUpdatedAt();
+        doc.setUpdatedAt(java.util.Date.from(timestampInstant));
 
         productRepository.save(doc);
         ack.acknowledge();

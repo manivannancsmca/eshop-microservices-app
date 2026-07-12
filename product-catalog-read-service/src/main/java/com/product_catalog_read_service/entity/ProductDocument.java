@@ -1,11 +1,12 @@
 package com.product_catalog_read_service.entity;
 
-
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -13,6 +14,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
+import java.util.Date;
 import java.util.List;
 
 @Document(indexName = "products")
@@ -66,7 +68,10 @@ public class ProductDocument {
     private Boolean isDeleted;
 
     // @Field(type = FieldType.Long)
-    @Field(type = FieldType.Date, format = DateFormat.date_hour_minute_second)
-    private String updatedAt; // Mapped directly as Long
-    
+    // @Field(type = FieldType.Date, format = DateFormat.date_hour_minute_second)
+    // private String updatedAt; // Mapped directly as Long
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+5:30")
+    private Date updatedAt;
+
 }

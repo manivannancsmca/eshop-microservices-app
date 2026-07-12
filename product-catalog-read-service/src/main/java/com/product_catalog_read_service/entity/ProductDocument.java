@@ -2,6 +2,7 @@ package com.product_catalog_read_service.entity;
 
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.elasticsearch.annotations.DateFormat;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
@@ -64,8 +65,8 @@ public class ProductDocument {
     @Field(type = FieldType.Boolean)
     private Boolean isDeleted;
 
-    @Field(type = FieldType.Long)
-    private Long updatedAt; // Mapped directly as Long
-
+    // @Field(type = FieldType.Long)
+    @Field(type = FieldType.Date, format = DateFormat.date_hour_minute_second)
+    private String updatedAt; // Mapped directly as Long
     
 }

@@ -26,16 +26,16 @@ import lombok.extern.slf4j.Slf4j;
 public class DebeziumProductSyncConsumer {
 
     private final ProductRepository productRepository;
-    
+
     // Thread-safe specific reader mapped to your target shared-JAR Avro class
-    private final SpecificDatumReader<ProductEvent> internalPayloadReader = 
-            new SpecificDatumReader<>(ProductEvent.class);
+    private final SpecificDatumReader<ProductEvent> internalPayloadReader = new SpecificDatumReader<>(
+            ProductEvent.class);
 
     @KafkaListener(topics = "cdc.product_catalog.outbox", groupId = "product-read-service-group")
     public void syncWithElasticsearch(ConsumerRecord<String, GenericRecord> record, Acknowledgment ack) {
         String productId = record.key();
         GenericRecord outerRecord = record.value();
-        
+
         log.info("-------------------------------");
         log.info("Consumer received an automatically unwrapped Avro record wrapper from Kafka.");
 
@@ -49,7 +49,8 @@ public class DebeziumProductSyncConsumer {
         }
 
         try {
-            // 1. Safe field extraction by string name, completely independent of column order or table layout
+            // 1. Safe field extraction by string name, completely independent of column
+            // order or table layout
             Object eventTypeObj = outerRecord.get("event_type");
             Object aggregateIdObj = outerRecord.get("aggregate_id");
             String eventType = eventTypeObj != null ? eventTypeObj.toString() : "";
@@ -82,9 +83,8 @@ public class DebeziumProductSyncConsumer {
 
             // 3. Decode the raw nested bytes cleanly back into the typed target Java bean
             ProductEvent productAvroEvent = internalPayloadReader.read(
-                    null, 
-                    DecoderFactory.get().binaryDecoder(rawAvroBytes, null)
-            );
+                    null,
+                    DecoderFactory.get().binaryDecoder(rawAvroBytes, null));
 
             if (Boolean.TRUE.equals(productAvroEvent.getIsDeleted())) {
                 log.info("CDC Event [SOFT DELETE] -> Dropping Product: {}", productAvroEvent.getId());
@@ -97,7 +97,8 @@ public class DebeziumProductSyncConsumer {
             saveDocument(productAvroEvent, ack);
 
         } catch (Exception pipelineError) {
-            log.error("Fatal pipeline processing failure inside outbox decoder: {}", pipelineError.getMessage(), pipelineError);
+            log.error("Fatal pipeline processing failure inside outbox decoder: {}", pipelineError.getMessage(),
+                    pipelineError);
             throw new RuntimeException("Consumer processing pipeline failure", pipelineError);
         }
     }
@@ -128,8 +129,18 @@ public class DebeziumProductSyncConsumer {
         doc.setStatus(productAvroEvent.getStatus().toString());
         doc.setIsDeleted(productAvroEvent.getIsDeleted());
 
-        Instant timestampInstant = productAvroEvent.getUpdatedAt();
-        doc.setUpdatedAt(timestampInstant.toEpochMilli());
+        // Instant timestampInstant = productAvroEvent.getUpdatedAt();
+        // doc.setUpdatedAt(timestampInstant.toEpochMilli());
+
+        // Convert the Instant to a formatted string matching MySQL's structure (e.g.,
+        // "2026-07-12 17:11:02")
+        java.time.Instant timestampInstant = productAvroEvent.getUpdatedAt();
+        java.time.format.DateTimeFormatter mysqlFormatter = java.time.format.DateTimeFormatter
+                .ofPattern("yyyy-MM-dd HH:mm:ss")
+                .withZone(java.time.ZoneId.systemDefault()); // Or use ZoneId.of("UTC") depending on your DB
+                                                             // configuration
+
+        doc.setUpdatedAt(mysqlFormatter.format(timestampInstant));
 
         productRepository.save(doc);
         ack.acknowledge();

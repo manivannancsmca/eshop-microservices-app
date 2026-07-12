@@ -16,8 +16,8 @@ spring:
       max-poll-records: 500
       
       # 1. WRAP THE DESERIALIZERS TO CATCH SERIALIZATION CRASHES SAFELY
-      key-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
-      value-deserializer: org.springframework.kafka.support.serializer.ErrorHandlingDeserializer
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: io.confluent.kafka.serializers.KafkaAvroDeserializer
       
       properties:
         # Delegate down to the actual target deserializers underneath the error handler wrapper
@@ -31,7 +31,7 @@ spring:
         # Setting this to false prevents the Confluent driver from looking up 'cdc.product_catalog.outbox.Value'.
         # It reads the message as a structural GenericRecord, which we will map inside the code.
         # Keep this true to continue using your compiled JAR class
-        specific.avro.reader: true
+        specific.avro.reader: false
 
         # Instruct Kafka to look at your explicit class mapping first
         specific.avro.reader.high.priority: true

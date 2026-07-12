@@ -27,19 +27,19 @@ public class DebeziumProductSyncConsumer {
 
     private final ProductRepository productRepository;
     
-    // Reader for the internal typed payload from your shared JAR
+    // Thread-safe specific reader mapped to your target shared-JAR Avro class
     private final SpecificDatumReader<ProductEvent> internalPayloadReader = 
             new SpecificDatumReader<>(ProductEvent.class);
 
     @KafkaListener(topics = "cdc.product_catalog.outbox", groupId = "product-read-service-group")
-    public void syncWithElasticsearch(ConsumerRecord<String, Object> record, Acknowledgment ack) {
+    public void syncWithElasticsearch(ConsumerRecord<String, GenericRecord> record, Acknowledgment ack) {
         String productId = record.key();
-        Object avroMessage = record.value();
+        GenericRecord outerRecord = record.value();
         
         log.info("-------------------------------");
-        log.info("Consumer read binary payload successfully from the topic.");
+        log.info("Consumer received an automatically unwrapped Avro record wrapper from Kafka.");
 
-        if (avroMessage == null) {
+        if (outerRecord == null) {
             log.info("CDC Event [HARD DELETE] -> Dropping Product: {}", productId);
             if (productId != null) {
                 productRepository.deleteById(productId);
@@ -49,16 +49,11 @@ public class DebeziumProductSyncConsumer {
         }
 
         try {
-            // Ensure the dynamic value is parsed as a GenericRecord wrapper via standard KafkaAvroDeserializer
-            if (!(avroMessage instanceof GenericRecord)) {
-                throw new IllegalArgumentException("Expected Avro GenericRecord but received: " + avroMessage.getClass().getName());
-            }
-
-            GenericRecord outboxRecord = (GenericRecord) avroMessage;
-            
-            // 1. Read top-level outbox envelope metadata cleanly
-            String eventType = outboxRecord.get("event_type") != null ? outboxRecord.get("event_type").toString() : "";
-            String aggregateId = outboxRecord.get("aggregate_id") != null ? outboxRecord.get("aggregate_id").toString() : "";
+            // 1. Safe field extraction by string name, completely independent of column order or table layout
+            Object eventTypeObj = outerRecord.get("event_type");
+            Object aggregateIdObj = outerRecord.get("aggregate_id");
+            String eventType = eventTypeObj != null ? eventTypeObj.toString() : "";
+            String aggregateId = aggregateIdObj != null ? aggregateIdObj.toString() : "";
 
             if ("PRODUCT_DELETED".equals(eventType)) {
                 log.info("CDC Event [METADATA DELETE] -> Dropping Product ID: {}", aggregateId);
@@ -67,9 +62,9 @@ public class DebeziumProductSyncConsumer {
                 return;
             }
 
-            // 2. Extract the nested database byte array payload
-            Object payloadObj = outboxRecord.get("payload");
-            byte[] rawAvroBytes;
+            // 2. Fetch the inner database byte array payload column contents
+            Object payloadObj = outerRecord.get("payload");
+            byte[] rawAvroBytes = null;
 
             if (payloadObj instanceof ByteBuffer) {
                 ByteBuffer buffer = (ByteBuffer) payloadObj;
@@ -77,11 +72,15 @@ public class DebeziumProductSyncConsumer {
                 buffer.get(rawAvroBytes);
             } else if (payloadObj instanceof byte[]) {
                 rawAvroBytes = (byte[]) payloadObj;
-            } else {
-                throw new IllegalStateException("Unexpected payload column data type: " + (payloadObj != null ? payloadObj.getClass().getName() : "null"));
             }
 
-            // 3. Decode internal binary byte segment directly back into the typed ProductEvent class
+            if (rawAvroBytes == null || rawAvroBytes.length == 0) {
+                log.warn("Extracted internal payload field is empty for aggregate ID: {}", aggregateId);
+                ack.acknowledge();
+                return;
+            }
+
+            // 3. Decode the raw nested bytes cleanly back into the typed target Java bean
             ProductEvent productAvroEvent = internalPayloadReader.read(
                     null, 
                     DecoderFactory.get().binaryDecoder(rawAvroBytes, null)
@@ -98,8 +97,8 @@ public class DebeziumProductSyncConsumer {
             saveDocument(productAvroEvent, ack);
 
         } catch (Exception pipelineError) {
-            log.error("Fatal pipeline processing failure inside Avro outbox decoder: {}", pipelineError.getMessage(), pipelineError);
-            throw new RuntimeException("Avro processing error", pipelineError);
+            log.error("Fatal pipeline processing failure inside outbox decoder: {}", pipelineError.getMessage(), pipelineError);
+            throw new RuntimeException("Consumer processing pipeline failure", pipelineError);
         }
     }
 

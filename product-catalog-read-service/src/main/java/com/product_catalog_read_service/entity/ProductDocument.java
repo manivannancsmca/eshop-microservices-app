@@ -67,10 +67,6 @@ public class ProductDocument {
     @Field(type = FieldType.Boolean)
     private Boolean isDeleted;
 
-    // @Field(type = FieldType.Long)
-    // @Field(type = FieldType.Date, format = DateFormat.date_hour_minute_second)
-    // private String updatedAt; // Mapped directly as Long
-
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+5:30")
     private Date updatedAt;
 
